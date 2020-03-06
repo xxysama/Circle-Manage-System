@@ -53,6 +53,7 @@
                         active-color="#13ce66"
                         inactive-color="#ff4949"
                         active-text="激活"
+                        @change="changeActive(scope.row.userId)"
                         >
                         </el-switch>
                     </template>
@@ -135,18 +136,18 @@ export default {
     methods: {
         // 获取用户表格数据
         getData(page) {
-                var _this = this
-                this.$axios.get('user/list/' + page)
-                    .then(response => {
+            var _this = this
+            this.$axios.get('user/list/' + page)
+                .then(response => {
                     console.log(response.data)
                     _this.tableData = response.data.records
                     _this.pageTotal = response.data.total
                     _this.query.pageIndex = response.data.current
                     _this.query.pageSize = responsedata.page.size
-                    })
-                    .catch(function (error) {
-                    console.log(error)
-                    })
+                })
+                .catch(function (error) {
+                console.log(error)
+            })
         },
         // 触发搜索按钮
         handleSearch() {
@@ -179,6 +180,21 @@ export default {
             this.$message.error(`删除了${str}`);
             this.multipleSelection = [];
         },
+        // 改变状态
+        changeActive(uid) {
+            alert(uid)
+            var _this = this
+            this.$axios.put('user/active', {
+                userId: uid
+            })
+                .then(response => {
+                    console.log(response.data)
+                })
+                .catch(function (error) {
+                    console.log(error)
+            })
+        },
+
         // 编辑操作
         handleEdit(index, row) {
             this.idx = index;
