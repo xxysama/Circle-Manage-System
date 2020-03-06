@@ -4,15 +4,15 @@ module.exports = {
     productionSourceMap: false,
     devServer: {
             port:4040,
-            open: true
-    //     proxy: {
-    //         '/api':{
-    //             target:'http://jsonplaceholder.typicode.com',
-    //             changeOrigin:true,
-    //             pathRewrite:{
-    //                 '/api':''
-    //             }
-    //         }
-    //     }
+            open: true,
+        proxy: {
+            '/api':{
+                target:'http://localhost:8443',
+                changeOrigin:true,
+                pathRewrite:{
+                    '/api':''
+                }
+            }
+        }
     }
 }
