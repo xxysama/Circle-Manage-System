@@ -93,10 +93,10 @@
         <el-dialog title="编辑" :visible.sync="editVisible" width="30%">
             <el-form ref="form" :model="form" label-width="70px">
                 <el-form-item label="用户名">
-                    <el-input v-model="form.name"></el-input>
+                    <el-input v-model="form.userName"></el-input>
                 </el-form-item>
-                <el-form-item label="地址">
-                    <el-input v-model="form.address"></el-input>
+                <el-form-item label="邮箱">
+                    <el-input v-model="form.email"></el-input>
                 </el-form-item>
             </el-form>
             <span slot="footer" class="dialog-footer">
@@ -143,7 +143,7 @@ export default {
                     _this.tableData = response.data.records
                     _this.pageTotal = response.data.total
                     _this.query.pageIndex = response.data.current
-                    _this.query.pageSize = responsedata.page.size
+                    _this.query.pageSize = response.data.size
                 })
                 .catch(function (error) {
                 console.log(error)
@@ -156,15 +156,35 @@ export default {
         },
         // 删除操作
         handleDelete(index, row) {
+            var _this = this
             // 二次确认删除
             this.$confirm('确定要删除吗？', '提示', {
                 type: 'warning'
             })
                 .then(() => {
-                    this.$message.success('删除成功');
-                    this.tableData.splice(index, 1);
+                    // 删除
+                this.$axios.delete('/user/delete',{
+                    data: {
+                        "userId":row.userId
+                        }
+                    })
+                    .then(response => {
+                        console.log(response.data)
+                        _this.tableData.splice(index, 1)
+                        _this.$message.success('删除成功')
+                        // 刷新当前页面
+                        _this.getData(_this.query.pageIndex)
+                    })
+                    .catch(function (error) {
+                    console.log(error)
+                })
                 })
                 .catch(() => {});
+        },
+
+        // 删除
+        deleteUser(index,row){
+
         },
         // 多选操作
         handleSelectionChange(val) {
@@ -182,7 +202,6 @@ export default {
         },
         // 改变状态
         changeActive(uid) {
-            alert(uid)
             var _this = this
             this.$axios.put('user/active', {
                 userId: uid
@@ -206,6 +225,19 @@ export default {
             this.editVisible = false;
             this.$message.success(`修改第 ${this.idx + 1} 行成功`);
             this.$set(this.tableData, this.idx, this.form);
+            var _this = this
+            this.$axios.put('user/update', {
+                userId: this.form.userId,
+                userName: this.form.userName,
+                email: this.form.email
+            })
+                .then(response => {
+                    console.log(response.data)
+                    _this.getData(_this.query.pageIndex)
+                })
+                .catch(function (error) {
+                console.log(error)
+            })
         },
         // 分页导航
         handlePageChange(val) {
