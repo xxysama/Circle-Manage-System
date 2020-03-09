@@ -15,11 +15,11 @@
                     class="handle-del mr10"
                     @click="delAllSelection"
                 >批量删除</el-button>
-                <el-select v-model="query.address" placeholder="地址" class="handle-select mr10">
-                    <el-option key="1" label="广东省" value="广东省"></el-option>
-                    <el-option key="2" label="湖南省" value="湖南省"></el-option>
+                <el-select v-model="query.state" clearable  placeholder="状态" class="handle-select mr10">
+                    <el-option key="1" label="激活" value="true"></el-option>
+                    <el-option key="2" label="锁定" value="false"></el-option>
                 </el-select>
-                <el-input v-model="query.name" placeholder="用户名" class="handle-input mr10"></el-input>
+                <el-input v-model="query.username" placeholder="用户名" class="handle-input mr10"></el-input>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
             </div>
             <el-table
@@ -114,8 +114,8 @@ export default {
     data() {
         return {
             query: {
-                address: '',
-                name: '',
+                state: '',
+                username: '',
                 pageIndex: 1,
                 pageSize: 5
             },
@@ -151,8 +151,24 @@ export default {
         },
         // 触发搜索按钮
         handleSearch() {
-            this.$set(this.query, 'pageIndex', 1);
-            this.getData();
+            // this.$set(this.query, 'pageIndex', 1);
+
+            var _this = this
+            // 默认搜索都是第一页
+            this.$axios.post('user/search/'+ this.query.pageIndex,{
+                active: this.query.state,
+                userName: this.query.username
+            })
+                .then(response => {
+                    console.log(response.data)
+                    _this.tableData = response.data.records
+                    _this.pageTotal = response.data.total
+                    _this.query.pageIndex = response.data.current
+                    _this.query.pageSize = response.data.size
+                })
+                .catch(function (error) {
+                console.log(error)
+            })
         },
         // 删除操作
         handleDelete(index, row) {
@@ -242,7 +258,13 @@ export default {
         // 分页导航
         handlePageChange(val) {
             this.$set(this.query, 'pageIndex', val);
-            this.getData(this.query.pageIndex);
+
+            if (this.query.state !== null) {
+                this.handleSearch()
+            } else {
+                this.getData(this.query.pageIndex)
+            }
+
         }
     }
 };
