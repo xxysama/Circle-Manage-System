@@ -76,6 +76,11 @@ export default {
                     index: 'users',
                     title: '用户管理'
                 },
+                                {
+                    icon: 'el-icon-lx-message',
+                    index: 'dynamics',
+                    title: '动态管理'
+                },
                 {
                     icon: 'el-icon-lx-calendar',
                     index: '3',

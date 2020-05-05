@@ -3,7 +3,7 @@
         <div class="crumbs">
             <el-breadcrumb separator="/">
                 <el-breadcrumb-item>
-                    <i class="el-icon-lx-cascades"></i> 用户数据表格
+                    <i class="el-icon-lx-cascades"></i> 用户动态表格
                 </el-breadcrumb-item>
             </el-breadcrumb>
         </div>
@@ -15,11 +15,14 @@
                     class="handle-del mr10"
                     @click="delAllSelection"
                 >批量删除</el-button>
-                <el-select v-model="query.state" clearable  placeholder="状态" class="handle-select mr10">
-                    <el-option key="1" label="激活" value="true"></el-option>
-                    <el-option key="2" label="锁定" value="false"></el-option>
-                </el-select>
-                <el-input v-model="query.username" placeholder="用户名" class="handle-input mr10"></el-input>
+                <el-date-picker
+                v-model="query.searchDate"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期" style="margin-right:10px" >
+                </el-date-picker>
+                <el-input v-model="query.des" placeholder="用户名或动态内容" class="handle-input mr10"></el-input>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
             </div>
             <el-table
@@ -31,36 +34,22 @@
                 @selection-change="handleSelectionChange"
             >
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
-                <el-table-column prop="userId" label="ID" width="55" align="center"></el-table-column>
+                <el-table-column prop="dynamicId" label="动态ID" width="70" align="center"></el-table-column>
                 <el-table-column prop="userName" label="用户名"></el-table-column>
-                <el-table-column prop="salt" label="盐值"></el-table-column>
-                <el-table-column prop="password" label="用户密码"></el-table-column>
-                <el-table-column prop="email" label="邮箱"></el-table-column>
-                <el-table-column label="头像(查看大图)" align="center">
+                <el-table-column prop="content" label="内容"></el-table-column>
+                <el-table-column label="插图(查看大图)" align="center">
                     <template slot-scope="scope">
-                        <el-image
-                            class="table-td-thumb"
-                            :src="scope.row.thumb"
-                            :preview-src-list="[scope.row.thumb]"
-                        ></el-image>
+                        <el-popover v-for="pic in scope.row.pictureList" :key="pic"
+                            placement="right"
+                            title=""
+                            trigger="hover">
+                            <img :src="pic"/>
+                            <img slot="reference" :src="pic" :alt="pic" style="max-height: 50px;max-width: 130px">
+                        </el-popover>
                     </template>
                 </el-table-column>
-                <el-table-column label="状态" align="center">
-                    <template slot-scope="scope">
-                        <el-switch
-                        style="display: block"
-                        v-model="scope.row.active"
-                        active-color="#13ce66"
-                        inactive-color="#ff4949"
-                        active-text="激活"
-                        @change="changeActive(scope.row.userId)"
-                        >
-                        </el-switch>
-                    </template>
-                </el-table-column>
-
-                <el-table-column prop="createdTime" label="注册时间"></el-table-column>
-                <el-table-column prop="updatedTime" label="更新时间"></el-table-column>
+                <el-table-column prop="createTime" label="发布时间"></el-table-column>
+                <el-table-column prop="updateTime" label="更新时间"></el-table-column>
                 <el-table-column label="操作" width="180" align="center">
                     <template slot-scope="scope">
                         <el-button
@@ -80,7 +69,7 @@
             <div class="pagination">
                 <el-pagination
                     background
-                    layout="total, prev, pager, next, jumper"
+                    layout="total, prev, pager, next"
                     :current-page="query.pageIndex"
                     :page-size="query.pageSize"
                     :total="pageTotal"
@@ -92,11 +81,8 @@
         <!-- 编辑弹出框 -->
         <el-dialog title="编辑" :visible.sync="editVisible" width="30%">
             <el-form ref="form" :model="form" label-width="70px">
-                <el-form-item label="用户名">
-                    <el-input v-model="form.userName"></el-input>
-                </el-form-item>
-                <el-form-item label="邮箱">
-                    <el-input v-model="form.email"></el-input>
+                <el-form-item label="内容">
+                    <el-input v-model="form.content"></el-input>
                 </el-form-item>
             </el-form>
             <span slot="footer" class="dialog-footer">
@@ -114,8 +100,8 @@ export default {
     data() {
         return {
             query: {
-                state: '',
-                username: '',
+                searchDate: '',
+                des: '',
                 pageIndex: 1,
                 pageSize: 5
             },
@@ -127,24 +113,22 @@ export default {
             form: {},
             idx: -1,
             id: -1,
-            searchFlag: false
+            searchFlag: 'false'
         };
     },
     created() {
-        // 默认初始化第一页
         this.getData(1);
     },
     methods: {
-        // 获取用户表格数据
+        // 获取数据
         getData(page) {
             var _this = this
-            this.$axios.get('user/list/' + page)
+            this.$axios.get('dynamic/list/' + page)
                 .then(response => {
                     console.log(response.data)
                     _this.tableData = response.data.records
                     _this.pageTotal = response.data.total
                     _this.query.pageIndex = response.data.current
-                    _this.query.pageSize = response.data.size
                 })
                 .catch(function (error) {
                 console.log(error)
@@ -153,12 +137,14 @@ export default {
         // 触发搜索按钮
         handleSearch() {
             // this.$set(this.query, 'pageIndex', 1);
-
             var _this = this
             // 默认搜索都是第一页
-            this.$axios.post('user/search/'+ this.query.pageIndex,{
-                active: this.query.state,
-                userName: this.query.username
+            this.$axios.get('dynamic/search/'+ this.query.pageIndex,{ params:{
+                beginDate: this.query.searchDate[0],
+                endDate:this.query.searchDate[1],
+                des: this.query.des
+            }
+
             })
                 .then(response => {
                     console.log(response.data)
@@ -167,7 +153,6 @@ export default {
                     _this.tableData = response.data.records
                     _this.pageTotal = response.data.total
                     _this.query.pageIndex = response.data.current
-                    _this.query.pageSize = response.data.size
                 })
                 .catch(function (error) {
                 console.log(error)
@@ -175,35 +160,15 @@ export default {
         },
         // 删除操作
         handleDelete(index, row) {
-            var _this = this
             // 二次确认删除
             this.$confirm('确定要删除吗？', '提示', {
                 type: 'warning'
             })
                 .then(() => {
-                    // 删除
-                this.$axios.delete('/user/delete',{
-                    data: {
-                        "userId":row.userId
-                        }
-                    })
-                    .then(response => {
-                        console.log(response.data)
-                        _this.tableData.splice(index, 1)
-                        _this.$message.success('删除成功')
-                        // 刷新当前页面
-                        _this.getData(_this.query.pageIndex)
-                    })
-                    .catch(function (error) {
-                    console.log(error)
-                })
+                    this.$message.success('删除成功');
+                    this.tableData.splice(index, 1);
                 })
                 .catch(() => {});
-        },
-
-        // 删除
-        deleteUser(index,row){
-
         },
         // 多选操作
         handleSelectionChange(val) {
@@ -219,20 +184,6 @@ export default {
             this.$message.error(`删除了${str}`);
             this.multipleSelection = [];
         },
-        // 改变状态
-        changeActive(uid) {
-            var _this = this
-            this.$axios.put('user/active', {
-                userId: uid
-            })
-                .then(response => {
-                    console.log(response.data)
-                })
-                .catch(function (error) {
-                    console.log(error)
-            })
-        },
-
         // 编辑操作
         handleEdit(index, row) {
             this.idx = index;
@@ -244,24 +195,11 @@ export default {
             this.editVisible = false;
             this.$message.success(`修改第 ${this.idx + 1} 行成功`);
             this.$set(this.tableData, this.idx, this.form);
-            var _this = this
-            this.$axios.put('user/update', {
-                userId: this.form.userId,
-                userName: this.form.userName,
-                email: this.form.email
-            })
-                .then(response => {
-                    console.log(response.data)
-                    _this.getData(_this.query.pageIndex)
-                })
-                .catch(function (error) {
-                console.log(error)
-            })
         },
         // 分页导航
         handlePageChange(val) {
             this.$set(this.query, 'pageIndex', val);
-            if(this.query.state === '' && this.query.username === '') {
+            if(this.query.searchDate === '' && this.query.des === '') {
                 this.searchFlag = false
             }
 
@@ -270,7 +208,6 @@ export default {
             } else {
                 this.getData(this.query.pageIndex)
             }
-
         }
     }
 };

@@ -38,7 +38,11 @@ export default new Router({
                     path: '/users',
                     component: () => import(/* webpackChunkName: "tabs" */ '../components/page/Users.vue'),
                     meta: { title: '用户管理' }
-                },           
+                },                {
+                    path: '/dynamics',
+                    component: () => import(/* webpackChunkName: "tabs" */ '../components/page/Dynamics.vue'),
+                    meta: { title: '动态管理' }
+                },              
                 {
                     path: '/form',
                     component: () => import(/* webpackChunkName: "form" */ '../components/page/BaseForm.vue'),
