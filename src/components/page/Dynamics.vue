@@ -17,6 +17,7 @@
                 >批量删除</el-button>
                 <el-date-picker
                 v-model="query.searchDate"
+                value-format="yyyy-MM-dd HH:mm:ss"
                 type="daterange"
                 range-separator="至"
                 start-placeholder="开始日期"
@@ -43,7 +44,7 @@
                             placement="right"
                             title=""
                             trigger="hover">
-                            <img :src="pic"/>
+                            <img :src="pic" style="max-height: 250px;max-width: 500px"/>
                             <img slot="reference" :src="pic" :alt="pic" style="max-height: 50px;max-width: 130px">
                         </el-popover>
                     </template>
@@ -160,13 +161,28 @@ export default {
         },
         // 删除操作
         handleDelete(index, row) {
+            var _this = this
             // 二次确认删除
             this.$confirm('确定要删除吗？', '提示', {
                 type: 'warning'
             })
                 .then(() => {
-                    this.$message.success('删除成功');
-                    this.tableData.splice(index, 1);
+                    // 删除
+                this.$axios.delete('dynamic/delete',{
+                    data: {
+                        "id":row.dynamicId
+                        }
+                    })
+                    .then(response => {
+                        console.log(response.data)
+                        _this.tableData.splice(index, 1)
+                        _this.$message.success('删除成功')
+                        // 刷新当前页面
+                        _this.getData(_this.query.pageIndex)
+                    })
+                    .catch(function (error) {
+                    console.log(error)
+                })
                 })
                 .catch(() => {});
         },
@@ -193,8 +209,21 @@ export default {
         // 保存编辑
         saveEdit() {
             this.editVisible = false;
-            this.$message.success(`修改第 ${this.idx + 1} 行成功`);
-            this.$set(this.tableData, this.idx, this.form);
+
+            var _this = this
+                this.$axios.put('dynamic/update', {
+                    id: this.form.dynamicId,
+                    content: this.form.content,
+                })
+                    .then(response => {
+                        console.log(response.data)
+                        _this.$message.success(`修改第 ${this.idx + 1} 行成功`);
+                        _this.$set(this.tableData, this.idx, this.form);
+                        _this.getData(_this.query.pageIndex)
+                    })
+                    .catch(function (error) {
+                    console.log(error)
+                })
         },
         // 分页导航
         handlePageChange(val) {
