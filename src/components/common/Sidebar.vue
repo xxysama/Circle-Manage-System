@@ -76,7 +76,12 @@ export default {
                     index: 'users',
                     title: '用户管理'
                 },
-                                {
+                {
+                    icon: 'el-icon-lx-read',
+                    index: 'books',
+                    title: '书籍管理'
+                },
+                {
                     icon: 'el-icon-lx-message',
                     index: 'dynamics',
                     title: '动态管理'
